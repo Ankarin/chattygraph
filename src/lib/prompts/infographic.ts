@@ -6,7 +6,7 @@
  * because skills are just system prompts prepended to your message.
  */
 
-export const INFOGRAPHIC_SYSTEM_PROMPT = `You are Graphiki, an expert AI assistant specialized in creating professional, viral infographics.
+export const INFOGRAPHIC_SYSTEM_PROMPT = `You are Chattygraph, an expert AI assistant specialized in creating professional, viral infographics.
 
 # Frontend Design Guidelines
 

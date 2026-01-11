@@ -18,7 +18,7 @@ export function Header() {
           href='/'
           className='flex items-center gap-x-4'
         >
-          <span className='font-semibold'>Graphiki</span>
+          <span className='font-semibold'>Chattygraph</span>
         </Link>
       </div>
       <div className='flex items-center gap-x-4'>
