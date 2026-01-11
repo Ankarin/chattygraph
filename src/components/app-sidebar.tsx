@@ -1,8 +1,8 @@
 'use client';
 
-import { useOrganization } from '@clerk/nextjs';
+import { useAuth } from '@clerk/nextjs';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { orpc } from '@/lib/orpc';
 import {
     Sidebar,
@@ -10,7 +10,6 @@ import {
     SidebarFooter,
     SidebarGroup,
     SidebarGroupContent,
-    SidebarGroupLabel,
     SidebarHeader,
     SidebarMenu,
     SidebarMenuButton,
@@ -20,15 +19,17 @@ import { Button } from "@/components/ui/button";
 import { Icons } from "@/components/ui/icons";
 
 export function AppSidebar() {
-    const { organization } = useOrganization();
+    const { isSignedIn } = useAuth();
     const router = useRouter();
-    const params = useParams();
+    const pathname = usePathname();
     const queryClient = useQueryClient();
-    const currentChatId = params.chat?.[0] as string | undefined;
+
+    // Extract chatId from pathname like /abc123 or /
+    const currentChatId = pathname === '/' ? undefined : pathname.slice(1);
 
     const { data: chatHistoryData } = useQuery(orpc.chat.list.queryOptions({
         input: {},
-        enabled: !!organization?.id,
+        enabled: isSignedIn,
     }));
 
     const chatHistory = chatHistoryData?.chats || [];
@@ -38,7 +39,7 @@ export function AppSidebar() {
             queryClient.invalidateQueries({
                 queryKey: orpc.chat.list.key({ type: 'query', input: {} })
             });
-            router.push(`/chat/${data.id}`);
+            router.push(`/${data.id}`);
         },
     }));
 
@@ -48,17 +49,17 @@ export function AppSidebar() {
                 queryKey: orpc.chat.list.key({ type: 'query', input: {} })
             });
             if (currentChatId) {
-                router.push('/chat');
+                router.push('/');
             }
         },
     }));
 
     const handleNewChat = () => {
-        createChatMutation.mutate({});
+        router.push('/');
     };
 
     const handleSelectChat = (chatId: string) => {
-        router.push(`/chat/${chatId}`);
+        router.push(`/${chatId}`);
     };
 
     const handleDeleteChat = (e: React.MouseEvent, chatId: string) => {

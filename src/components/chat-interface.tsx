@@ -1,8 +1,11 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useChat, type UIMessage } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
+import { useRouter } from 'next/navigation';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { orpc } from '@/lib/orpc';
 import { Conversation, ConversationContent, ConversationScrollButton } from './ai-elements/conversation';
 import { Message, MessageContent } from './ai-elements/message';
 import { PromptInput, PromptInputBody, PromptInputSubmit, PromptInputTextarea } from './ai-elements/prompt-input';
@@ -15,11 +18,23 @@ import { Icons } from './ui/icons';
 interface ChatInterfaceProps {
     chatId?: string;
     initialMessages?: UIMessage[];
+    initialInput?: string;
 }
 
-export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
+export function ChatInterface({ chatId, initialMessages, initialInput }: ChatInterfaceProps) {
     const [input, setInput] = useState('');
     const [showPreview, setShowPreview] = useState<string | null>(null);
+    const router = useRouter();
+    const queryClient = useQueryClient();
+    const hasSentInitialMessage = useRef(false);
+
+    const createChatMutation = useMutation(orpc.chat.create.mutationOptions({
+        onSuccess: (data) => {
+            queryClient.invalidateQueries({
+                queryKey: orpc.chat.list.key({ type: 'query', input: {} })
+            });
+        },
+    }));
 
     const { messages, sendMessage, status, stop } = useChat({
         id: chatId,
@@ -33,9 +48,33 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
 
     const isLoading = status === 'submitted' || status === 'streaming';
 
+    // Auto-send initial message if provided (from redirect after chat creation)
+    useEffect(() => {
+        if (initialInput && chatId && !hasSentInitialMessage.current && messages.length === 0) {
+            hasSentInitialMessage.current = true;
+            // Clear the URL query param
+            router.replace(`/${chatId}`, { scroll: false });
+            // Send the message
+            sendMessage({ text: initialInput });
+        }
+    }, [initialInput, chatId, messages.length, router, sendMessage]);
+
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (!input.trim() || isLoading) return;
+
+        // If no chatId, create a new chat first then redirect
+        if (!chatId) {
+            try {
+                const newChat = await createChatMutation.mutateAsync({});
+                // Redirect to the new chat - the page will reload with the chatId
+                router.push(`/${newChat.id}?message=${encodeURIComponent(input)}`);
+            } catch (error) {
+                console.error('Failed to create chat:', error);
+            }
+            return;
+        }
+
         sendMessage({ text: input });
         setInput('');
         setShowPreview(null);
@@ -157,12 +196,12 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
                                     onChange={(e) => setInput(e.target.value)}
                                     value={input}
                                     className="flex-1 border-0 focus-visible:ring-0 bg-transparent resize-none !min-h-[2.5rem] px-3 py-2 text-base"
-                                    disabled={isLoading}
+                                    disabled={isLoading || createChatMutation.isPending}
                                     placeholder="e.g., Create an infographic about AI trends in 2025..."
                                     autoFocus
                                 />
                                 <PromptInputSubmit
-                                    disabled={!input.trim() && !isLoading}
+                                    disabled={(!input.trim() && !isLoading) || createChatMutation.isPending}
                                     className="h-10 w-10 shrink-0 rounded-full flex items-center justify-center"
                                     onClick={(e) => {
                                         if (isLoading) {

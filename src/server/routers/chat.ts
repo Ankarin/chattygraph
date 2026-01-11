@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { db } from "@/db";
 import { chats } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import { type UIMessage } from "ai";
 import { nanoid } from "nanoid";
 import { authedProcedure } from "../middleware/auth";
@@ -14,7 +14,7 @@ export const chatRouter = {
 
             const [newChat] = await db.insert(chats).values({
                 id: chatId,
-                organizationId: context.organizationId,
+                userId: context.userId,
                 messages: [],
             }).returning();
 
@@ -24,7 +24,6 @@ export const chatRouter = {
 
             return {
                 id: newChat.id,
-                organizationId: newChat.organizationId,
             };
         }),
 
@@ -32,7 +31,7 @@ export const chatRouter = {
         .input(z.object({}))
         .handler(async ({ context }) => {
             const chatList = await db.query.chats.findMany({
-                where: eq(chats.organizationId, context.organizationId),
+                where: eq(chats.userId, context.userId),
                 orderBy: [desc(chats.updatedAt)],
             });
 
@@ -66,15 +65,11 @@ export const chatRouter = {
         }))
         .handler(async ({ input, context }) => {
             const chat = await db.query.chats.findFirst({
-                where: eq(chats.id, input.id),
+                where: and(eq(chats.id, input.id), eq(chats.userId, context.userId)),
             });
 
             if (!chat) {
                 throw new Error('Chat not found');
-            }
-
-            if (chat.organizationId !== context.organizationId) {
-                throw new Error('Chat does not belong to this organization');
             }
 
             return {
@@ -91,15 +86,11 @@ export const chatRouter = {
         }))
         .handler(async ({ input, context }) => {
             const chat = await db.query.chats.findFirst({
-                where: eq(chats.id, input.id),
+                where: and(eq(chats.id, input.id), eq(chats.userId, context.userId)),
             });
 
             if (!chat) {
                 throw new Error('Chat not found');
-            }
-
-            if (chat.organizationId !== context.organizationId) {
-                throw new Error('Chat does not belong to this organization');
             }
 
             await db.delete(chats).where(eq(chats.id, input.id));
@@ -107,4 +98,3 @@ export const chatRouter = {
             return { success: true };
         }),
 };
-

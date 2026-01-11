@@ -1,7 +1,7 @@
 'use client';
 
 import { ChatInterface } from '@/components/chat-interface';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { orpc } from '@/lib/orpc';
 import { Loader } from '@/components/ai-elements/loader';
@@ -9,7 +9,9 @@ import type { UIMessage } from '@ai-sdk/react';
 
 export default function ChatPage() {
     const params = useParams();
+    const searchParams = useSearchParams();
     const chatId = params.chat?.[0] as string | undefined;
+    const initialMessage = searchParams.get('message');
 
     const { data: chatData, isLoading, isFetched } = useQuery({
         ...orpc.chat.get.queryOptions({ input: { id: chatId! } }),
@@ -29,6 +31,7 @@ export default function ChatPage() {
             key={chatId ?? 'new'}
             chatId={chatId}
             initialMessages={chatData?.messages as UIMessage[] | undefined}
+            initialInput={initialMessage || undefined}
         />
     );
 }

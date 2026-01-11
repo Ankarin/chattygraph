@@ -14,7 +14,7 @@ const chatRequestSchema = z.object({
 
 export async function POST(request: NextRequest) {
     try {
-        const { userId, orgId } = await auth();
+        const { userId } = await auth();
 
         if (!userId) {
             return new Response(
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
         return result.toUIMessageStreamResponse({
             originalMessages: messages as UIMessage[],
             onFinish: async ({ messages: allMessages }) => {
-                if (chatId && orgId) {
+                if (chatId) {
                     try {
                         await db.update(chats)
                             .set({

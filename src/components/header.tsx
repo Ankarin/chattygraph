@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { OrganizationSwitcher, SignInButton, SignUpButton, SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
+import { SignInButton, SignUpButton, SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import { SidebarTrigger } from './ui/sidebar';
@@ -31,7 +31,6 @@ export function Header() {
           </SignUpButton>
         </SignedOut>
         <SignedIn>
-          <OrganizationSwitcher />
           <Button
             variant='ghost'
             size='icon'
