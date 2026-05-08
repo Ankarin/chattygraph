@@ -1,6 +1,6 @@
-# chattygraph
+# Chattygraph
 
-Chattygraph — AI chat app with shareable conversation graphs (Next.js + Anthropic + Clerk + Drizzle).
+AI-powered infographic and data visualization generator built with Next.js, Anthropic Claude, and Drizzle.
 
 **Live:** https://chattygraph.vercel.app
 
@@ -13,7 +13,6 @@ Chattygraph — AI chat app with shareable conversation graphs (Next.js + Anthro
 - Neon Postgres
 - Clerk auth
 - oRPC
-- Tanstack Query
 - Tailwind
 - shadcn/ui
 - Vercel AI SDK
